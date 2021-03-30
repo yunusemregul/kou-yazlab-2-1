@@ -10,8 +10,21 @@
     </form>
 
     {% if results: %}
+        <div>
+            <b>Ana url:</b><br>
+            <b>{{mainUrl}}</b><br>
+            <b>Keywords:</b> {{mainUrlKeywords}}
+        </div>
+
+        <br>
+        <br>
+
         {% for url, similarity in results: %}
-            <b>{{url}}</b> {{similarity}}<br>
+            <div>
+                <b>{{url}}</b> {{similarity}}<br>
+                <b>Keywords:</b> {{keywords[url]}}
+            </div>
+            <br>
         {% endfor %}
     {% endif %}
 </body>

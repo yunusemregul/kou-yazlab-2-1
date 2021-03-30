@@ -1,0 +1,63 @@
+<head>
+    <title>Stage 5</title>
+    <style>
+        .sub {
+            margin-left: 30px;
+            margin-bottom: 5px;
+            padding: 4px;
+        }
+
+        .sub-1 {
+            margin-bottom: 10px;
+            background-color: darkgray;
+        }
+
+        .sub-2 {
+            background-color: dimgray;
+        }
+    </style>
+</head>
+
+<body>
+    <form method="POST">
+        <input type="text" name="url-entry" required/>
+        <textarea type="text" name="url-set" rows="5" required></textarea>
+        <input type="submit" value="Start" />
+    </form>
+
+    {% if mainUrl: %}
+        <div>
+            <b>Ana url:</b><br>
+            <b>{{mainUrl}}</b><br>
+            <b>Keywords:</b> {{mainUrlKeywords}}
+        </div>
+
+        <br>
+        <br>
+
+        {% for (url, keywords) in urlsAndKeywords: %}
+            <div>
+                <b>{{url}}</b> {{sublinksTree[url]['similarity']}}<br>
+                <b>Keywords:</b> {{keywords}}
+            </div>
+            {% for subUrl in sublinksTree[url] %}
+                {% if subUrl!='similarity' %}
+                    <div class="sub sub-1">
+                        <b>{{subUrl}}</b> {{sublinksTree[url][subUrl]['similarity']}}<br>
+                        <b>Keywords:</b> {{sublinkKeywords[subUrl]}}
+                        <br>
+                        {% for subSubUrl in sublinksTree[url][subUrl] %}
+                        {% if subSubUrl!='similarity' %}
+                            <div class="sub sub-2">
+                                <b>{{subSubUrl}}</b> {{sublinksTree[url][subUrl][subSubUrl]['similarity']}}<br>
+                                <b>Keywords:</b> {{sublinkKeywords[subSubUrl]}}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <br>
+        {% endfor %}
+    {% endif %}
+</body>
