@@ -1,0 +1,17 @@
+<head>
+    <title>Stage 3</title>
+</head>
+
+<body>
+    <form method="POST">
+        <input type="text" name="url-entry" required/>
+        <textarea type="text" name="url-set" rows="5" required></textarea>
+        <input type="submit" value="Start" />
+    </form>
+
+    {% if results: %}
+        {% for url, similarity in results: %}
+            <b>{{url}}</b> {{similarity}}<br>
+        {% endfor %}
+    {% endif %}
+</body>

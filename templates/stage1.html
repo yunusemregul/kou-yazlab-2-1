@@ -1,0 +1,16 @@
+<head>
+    <title>Stage 1</title>
+</head>
+
+<body>
+    <form method="POST">
+        <input type="text" name="url-entry" required/>
+        <input type="submit" value="Start" />
+    </form>
+
+    {% if results: %}
+        {% for word, frequency in results: %}
+            <b>{{word}}</b> {{frequency}}<br>
+        {% endfor %}
+    {% endif %}
+</body>
