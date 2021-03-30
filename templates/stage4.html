@@ -7,6 +7,10 @@
             padding: 4px;
         }
 
+        .sub-main {
+            background-color: #cccccc;
+        }
+
         .sub-1 {
             margin-bottom: 10px;
             background-color: darkgray;
@@ -36,7 +40,7 @@
         <br>
 
         {% for (url, keywords) in urlsAndKeywords: %}
-            <div>
+            <div class="sub-main">
                 <b>{{url}}</b> {{sublinksTree[url]['similarity']}}<br>
                 <b>Keywords:</b> {{keywords}}
             </div>

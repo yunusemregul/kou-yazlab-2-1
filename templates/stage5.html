@@ -7,6 +7,10 @@
             padding: 4px;
         }
 
+        .sub-main {
+            background-color: #cccccc;
+        }
+
         .sub-1 {
             margin-bottom: 10px;
             background-color: darkgray;
@@ -29,14 +33,15 @@
         <div>
             <b>Ana url:</b><br>
             <b>{{mainUrl}}</b><br>
-            <b>Keywords:</b> {{mainUrlKeywords}}
+            <b>Keywords:</b> {{mainUrlKeywords}}<br>
+            <b>Semantics:</b> {{mainUrlSemantics}}<br>
         </div>
 
         <br>
         <br>
 
         {% for (url, keywords) in urlsAndKeywords: %}
-            <div>
+            <div class="sub-main">
                 <b>{{url}}</b> {{sublinksTree[url]['similarity']}}<br>
                 <b>Keywords:</b> {{keywords}}
             </div>
@@ -44,13 +49,15 @@
                 {% if subUrl!='similarity' %}
                     <div class="sub sub-1">
                         <b>{{subUrl}}</b> {{sublinksTree[url][subUrl]['similarity']}}<br>
-                        <b>Keywords:</b> {{sublinkKeywords[subUrl]}}
+                        <b>Keywords:</b> {{sublinkKeywords[subUrl]}}<br>
+                        <b>Semantics:</b> {{sublinkAndSemantics[subUrl]}}<br>
                         <br>
                         {% for subSubUrl in sublinksTree[url][subUrl] %}
                         {% if subSubUrl!='similarity' %}
                             <div class="sub sub-2">
                                 <b>{{subSubUrl}}</b> {{sublinksTree[url][subUrl][subSubUrl]['similarity']}}<br>
-                                <b>Keywords:</b> {{sublinkKeywords[subSubUrl]}}
+                                <b>Keywords:</b> {{sublinkKeywords[subSubUrl]}}<br>
+                                <b>Semantics:</b> {{sublinkAndSemantics[subSubUrl]}}<br>
                             </div>
                         {% endif %}
                     {% endfor %}

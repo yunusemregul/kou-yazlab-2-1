@@ -6,6 +6,7 @@ import asyncio
 from bs4 import BeautifulSoup
 from nltk import RegexpTokenizer
 from urllib.parse import urljoin
+from nltk.corpus import wordnet
 
 app = Flask(__name__)
 
@@ -110,6 +111,25 @@ async def findKeywords(html):
 
     return keywords
 
+def findSimilarWords(keywords):
+    similarWords = set()
+
+    for (keyword, frequency) in keywords:
+        synsets = wordnet.synsets(keyword) 
+        for syns in synsets: 
+            for similarLemma in syns.lemmas():
+                similarWord = similarLemma.name()
+
+                if '_' in similarWord:
+                    continue
+
+                similarWord = similarWord.lower()
+                
+                if similarWord not in similarWords:
+                    similarWords.add(similarWord)
+
+    return similarWords
+
 # hitler geçme sayısı / toplam frekans sayısı nı kesişiyosa çarpıyoz
 # etkisi artıyor
 
@@ -118,8 +138,18 @@ async def findSimilarity(url1Keywords, url2Keywords):
     url2KeywordsSet = set(dict(url2Keywords).keys())
     
     intersection = len(url1KeywordsSet.intersection(url2KeywordsSet))
+    union = len(url1KeywordsSet) + len(url2KeywordsSet)
 
-    return intersection / (len(url1KeywordsSet) + len(url2KeywordsSet) - intersection)
+    return intersection / (union - intersection)
+
+async def findSemanticSimilarity(url1Keywords, url2Keywords, url1Semantics, url2Semantics):
+    url1KeywordsSet = set(dict(url1Keywords).keys())
+    url2KeywordsSet = set(dict(url2Keywords).keys())
+    
+    intersection = len(url1KeywordsSet.intersection(url2KeywordsSet)) + len(url1Semantics.intersection(url2Semantics))
+    union = len(url1KeywordsSet) + len(url2KeywordsSet) + len(url1Semantics) + len(url2Semantics)
+
+    return intersection / (union - intersection)
 
 async def findSimilarityBetweenUrls(mainUrlContent, urlsContent):
     mainUrlKeywords = await findKeywords(mainUrlContent)
@@ -137,6 +167,27 @@ async def findSimilarityBetweenUrls(mainUrlContent, urlsContent):
     similarities = await asyncio.gather(*similarityTasks)
 
     return similarities, mainUrlKeywords, keywords
+
+async def findSemanticSimilarityBetweenUrls(mainUrlContent, urlsContent):
+    mainUrlKeywords = await findKeywords(mainUrlContent)
+    mainUrlSemantics = findSimilarWords(mainUrlKeywords)
+    
+    keywordTasks = []
+    for urlContent in urlsContent:
+        keywordTasks.append(findKeywords(urlContent))
+
+    keywords = await asyncio.gather(*keywordTasks)
+
+    allSemantics = []
+    similarityTasks = []
+    for urlKeywords in keywords:
+        semantics = findSimilarWords(urlKeywords)
+        allSemantics.append(semantics)
+        similarityTasks.append(findSemanticSimilarity(mainUrlKeywords, urlKeywords, mainUrlSemantics, semantics))
+
+    similarities = await asyncio.gather(*similarityTasks)
+
+    return similarities, mainUrlKeywords, keywords, mainUrlSemantics, allSemantics
 
 async def getSublinks(url):
     html = await asyncio.gather(getContentOfUrls(url))
@@ -304,7 +355,7 @@ def stage5():
         mainUrlContent = loop.run_until_complete(asyncio.gather(getContentOfUrls(mainUrl)))[0][0]
         urlsContent = loop.run_until_complete(asyncio.gather(getContentOfUrls(urls)))[0]
         
-        similarities, mainUrlKeywords, keywords = loop.run_until_complete(asyncio.gather(findSimilarityBetweenUrls(mainUrlContent, urlsContent)))[0]
+        similarities, mainUrlKeywords, keywords, mainUrlSemantics, semantics = loop.run_until_complete(asyncio.gather(findSemanticSimilarityBetweenUrls(mainUrlContent, urlsContent)))[0]
 
         sublinksTree = dict()
         sublinksSet = set()
@@ -316,7 +367,7 @@ def stage5():
 
         sublinksContent = loop.run_until_complete(asyncio.gather(getContentOfUrls(sublinksSet)))[0]
         
-        sublinkSimilarities, mainUrlKeywords, sublinkKeywords = loop.run_until_complete(asyncio.gather(findSimilarityBetweenUrls(mainUrlContent, sublinksContent)))[0]
+        sublinkSimilarities, mainUrlKeywords, sublinkKeywords, mainUrlSemantics, sublinkSemantics = loop.run_until_complete(asyncio.gather(findSemanticSimilarityBetweenUrls(mainUrlContent, sublinksContent)))[0]
         
         similaritiesAndSites = dict(zip(urls, similarities))
         sublinkAndSimilarities = dict(zip(sublinksSet, sublinkSimilarities))
@@ -335,11 +386,13 @@ def stage5():
             sublinksTree[site]['similarity'] = round(similaritiesAndSites[site] * 100, 3)
 
         sublinksTree = dict(sorted(sublinksTree.items(), key=lambda site: site[1]['similarity']))
-
+        
         urlsAndKeywords = list(zip(urls, keywords))
-
         sublinkKeywords = dict(zip(sublinksSet, sublinkKeywords))
 
-        return render_template('stage5.html', mainUrl = mainUrl, mainUrlKeywords = mainUrlKeywords, urlsAndKeywords = urlsAndKeywords, sublinksTree = sublinksTree, sublinksSet = sublinksSet, sublinkKeywords = sublinkKeywords)
+        urlsAndSemantics = list(zip(urls, semantics))
+        sublinkAndSemantics = dict(zip(sublinksSet, sublinkSemantics))
+
+        return render_template('stage5.html', mainUrl = mainUrl, mainUrlSemantics = mainUrlSemantics, mainUrlKeywords = mainUrlKeywords, urlsAndKeywords = urlsAndKeywords, sublinksTree = sublinksTree, sublinksSet = sublinksSet, sublinkKeywords = sublinkKeywords, urlsAndSemantics=urlsAndSemantics, sublinkAndSemantics=sublinkAndSemantics)
     else:
         return render_template('stage5.html')
